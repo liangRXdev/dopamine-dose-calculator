@@ -1,5 +1,6 @@
 # Dopamine 劑量換算工具
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-2563eb?style=flat-square)](https://lianggaga927-beep.github.io/dopamine-dose-calculator/)
 ICU 查訪專用的 Dopamine 靜脈注射劑量即時換算工具，以單一 HTML 檔案部署於 GitHub Pages，無需後端、無需安裝。
 
 ---
