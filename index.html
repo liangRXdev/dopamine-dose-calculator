@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dopamine 劑量換算工具</title>
+  <meta name="description" content="ICU 查訪用 Dopamine 劑量快速換算 — 支援雙向換算與多種配方濃度" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-900: #0a2d52;
+      --blue-700: #0f4c8a;
+      --blue-500: #1a6dbf;
+      --blue-300: #5b9fd6;
+      --blue-100: #daeaf8;
+      --blue-50:  #f0f6fc;
+
+      --bg:           #eef3f9;
+      --surface:      #ffffff;
+      --surface2:     #e4edf7;
+      --border:       rgba(15,76,138,0.12);
+      --border-strong:rgba(15,76,138,0.22);
+
+      --text:  #0d1f33;
+      --text2: #3d5a78;
+      --text3: #7a9ab5;
+
+      --accent:      var(--blue-700);
+      --accent-bg:   var(--blue-50);
+      --accent-text: var(--blue-700);
+      --accent-solid:#ffffff;
+
+      --success:      #0d6e3f;
+      --success-bg:   #e6f7ee;
+      --success-text: #0a5230;
+      --success-solid:#ffffff;
+
+      --danger:      #b91c1c;
+      --danger-bg:   #fef2f2;
+      --danger-text: #991b1b;
+
+      --warn-bg:     #fffbeb;
+      --warn-text:   #78350f;
+      --warn-border: rgba(180,130,0,0.22);
+
+      --radius:    10px;
+      --radius-sm: 6px;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Noto Sans TC', sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #0c1a2a;
+        --surface:      #112236;
+        --surface2:     #172d44;
+        --border:       rgba(91,159,214,0.12);
+        --border-strong:rgba(91,159,214,0.22);
+        --text:  #d6eaf8;
+        --text2: #7ab3d4;
+        --text3: #3d6a8a;
+        --accent:      #5b9fd6;
+        --accent-bg:   #0f2d45;
+        --accent-text: #8ec6e8;
+        --accent-solid:#ffffff;
+        --success:      #34d399;
+        --success-bg:   #052e1e;
+        --success-text: #6ee7b7;
+        --danger:      #f87171;
+        --danger-bg:   #3f0f0f;
+        --danger-text: #fca5a5;
+        --warn-bg:     #1c1400;
+        --warn-text:   #fcd34d;
+        --warn-border: rgba(250,204,21,0.18);
+      }
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 1.5rem 1rem 3rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { max-width: 480px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      margin-bottom: 1.75rem;
+      padding-left: 14px;
+      border-left: 3px solid var(--blue-500);
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      background: var(--blue-700);
+      color: #ffffff;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    h1 span {
+      color: var(--text2);
+      font-size: 0.78rem;
+      font-weight: 400;
+      display: block;
+      margin-top: 4px;
+      font-family: var(--mono);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-top: 2.5px solid var(--blue-300);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.15rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 7px;
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+
+    /* ── 濃度選擇 ── */
+    .conc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .conc-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      background: var(--surface2);
+      color: var(--text2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 7px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.13s;
+      line-height: 1.3;
+    }
+    .conc-btn:hover {
+      background: var(--blue-100);
+      color: var(--blue-700);
+      border-color: var(--blue-300);
+    }
+    .conc-btn.active {
+      background: var(--blue-700);
+      color: #ffffff;
+      border-color: var(--blue-700);
+      font-weight: 500;
+    }
+    .conc-btn .sub { font-size: 9px; opacity: 0.75; display: block; margin-top: 2px; }
+    .conc-btn.active .sub { opacity: 0.85; }
+
+    .custom-row {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .custom-row.show { display: grid; }
+
+    /* ── 方向切換 ── */
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .mode-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 9px 6px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--surface2);
+      color: var(--text2);
+      border: none;
+      transition: all 0.13s;
+      line-height: 1.5;
+    }
+    .mode-btn:first-child { border-right: 1px solid var(--border-strong); }
+    .mode-btn.active {
+      background: var(--blue-700);
+      color: #ffffff;
+      font-weight: 500;
+    }
+    .mode-btn .sub { font-size: 9px; opacity: 0.6; display: block; }
+    .mode-btn.active .sub { opacity: 0.8; }
+
+    /* ── 輸入 ── */
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input[type="number"] {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.75rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus {
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(26,109,191,0.15);
+    }
+    input::placeholder { color: var(--text3); font-weight: 400; }
+    .unit-hint { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-top: 5px; }
+
+    /* ── 結果 ── */
+    #result-area { display: none; }
+    .result-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+    .result-num {
+      font-family: var(--mono);
+      font-size: 2.6rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--blue-700);
+    }
+    .result-unit { font-family: var(--mono); font-size: 0.8rem; color: var(--text2); }
+
+    .zone-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      padding: 4px 11px; border-radius: 999px; letter-spacing: 0.03em; margin-bottom: 6px;
+    }
+    .zone-pill .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    .zone-dopa  { background: var(--blue-700); color: #ffffff; }
+    .zone-dopa .dot  { background: var(--blue-100); }
+    .zone-beta  { background: var(--success); color: #ffffff; }
+    .zone-beta .dot  { background: #a7f3d0; }
+    .zone-alpha { background: var(--danger); color: #ffffff; }
+    .zone-alpha .dot { background: #fecaca; }
+
+    .zone-effect { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    .warn-box {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-left: 3px solid #d97706;
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      margin-top: 0.9rem;
+    }
+    .warn-box p { font-size: 12px; color: var(--warn-text); line-height: 1.7; white-space: pre-wrap; }
+
+    /* ── 對照表 ── */
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+    .ref-table thead th {
+      text-align: left; color: var(--text3); font-weight: 500;
+      font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 0 8px;
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .ref-table thead th:nth-child(2),
+    .ref-table thead th:nth-child(3) { text-align: right; }
+    .ref-table tbody tr { border-top: 1px solid var(--border); }
+    .ref-table tbody td { padding: 7px 0; color: var(--text2); }
+    .ref-table tbody td:nth-child(2),
+    .ref-table tbody td:nth-child(3) { text-align: right; }
+    .ref-table tbody tr.current { background: var(--blue-50); }
+    .ref-table tbody tr.current td { color: var(--blue-700); font-weight: 500; }
+    .cdot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--blue-500); margin-right: 6px; vertical-align: middle; position: relative; top: -1px;
+    }
+
+    .empty-hint { text-align: center; padding: 2rem 0 1rem; color: var(--text3); font-size: 13px; }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--mono);
+      line-height: 1.8;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim { animation: fadeIn 0.18s ease both; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="badge">ICU Pharmacy Tool</div>
+    <h1>Dopamine 劑量換算
+      <span id="conc-display">600 mg / 200 mL &middot; 3.000 mg/mL</span>
+    </h1>
+  </header>
+
+  <!-- 配方濃度 -->
+  <div class="card">
+    <label class="field-label">配方濃度</label>
+    <div class="conc-grid">
+      <button class="conc-btn active" data-mg="600" data-ml="200" onclick="selectConc(this)">
+        600/200<span class="sub">3 mg/mL</span>
+      </button>
+      <button class="conc-btn" data-mg="400" data-ml="250" onclick="selectConc(this)">
+        400/250<span class="sub">1.6 mg/mL</span>
+      </button>
+      <button class="conc-btn" data-mg="800" data-ml="250" onclick="selectConc(this)">
+        800/250<span class="sub">3.2 mg/mL</span>
+      </button>
+      <button class="conc-btn" data-mg="custom" data-ml="custom" onclick="selectConc(this)">
+        自訂<span class="sub">mg / mL</span>
+      </button>
+    </div>
+    <div class="custom-row" id="custom-row">
+      <div>
+        <label class="field-label">藥量 (mg)</label>
+        <input type="number" id="c-mg" min="1" max="9999" step="1" placeholder="600" inputmode="decimal" />
+      </div>
+      <div>
+        <label class="field-label">溶液量 (mL)</label>
+        <input type="number" id="c-ml" min="1" max="9999" step="1" placeholder="200" inputmode="decimal" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 換算方向 + 輸入 -->
+  <div class="card">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-rate" onclick="setMode('rate')">
+        mL/hr → mcg/kg/min
+        <span class="sub">查目前劑量</span>
+      </button>
+      <button class="mode-btn" id="btn-dose" onclick="setMode('dose')">
+        mcg/kg/min → mL/hr
+        <span class="sub">查目標速率</span>
+      </button>
+    </div>
+    <div class="input-grid">
+      <div>
+        <label class="field-label" id="lbl-a">輸注速率</label>
+        <input type="number" id="val-a" min="0.01" max="999" step="0.1" placeholder="10.0" inputmode="decimal" oninput="calc()" />
+        <div class="unit-hint" id="unit-a">mL / hr</div>
+      </div>
+      <div>
+        <label class="field-label">體重</label>
+        <input type="number" id="wt" min="10" max="250" step="1" placeholder="60" inputmode="decimal" oninput="calc()" />
+        <div class="unit-hint">kg</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="empty-hint" class="empty-hint">輸入數值後自動顯示結果</div>
+
+  <!-- 結果 -->
+  <div id="result-area">
+    <div class="card anim">
+      <div class="result-row">
+        <span class="result-num" id="res-val">—</span>
+        <span class="result-unit" id="res-unit">—</span>
+      </div>
+      <div id="zone-pill" class="zone-pill"><span class="dot"></span><span id="zone-name">—</span></div>
+      <div class="zone-effect" id="zone-effect">—</div>
+      <div id="warn-box" class="warn-box" style="display:none;"><p id="warn-text"></p></div>
+    </div>
+
+    <div class="card anim" style="animation-delay:0.05s;">
+      <label class="field-label" style="margin-bottom:0.6rem;">劑量區間對照（此體重 / 此濃度）</label>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>作用</th>
+            <th>mcg/kg/min</th>
+            <th>mL / hr</th>
+          </tr>
+        </thead>
+        <tbody id="ref-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    換算式（→ mcg/kg/min）：mL/hr &times; (mg/mL &times; 1000) &divide; (kg &times; 60)<br>
+    Ref: Lexi-Comp, Drug Information &copy; 1978&ndash;2021
+  </footer>
+</div>
+
+<script>
+var concMgPerMl = 3;
+var mode = 'rate';
+
+var ZONES = [
+  { min:0,  max:5,        cls:'zone-dopa',  name:'Dopamine 受體（利尿）',   effect:'腎血流↑、尿量↑',                warn:'低劑量 Dopamine 不建議單獨用於腎臟保護（缺乏充分臨床證據）。\n注意：部分文獻將 Dopa 受體切點設為 <2 mcg/kg/min，各來源定義不一；劑量區間為參考值，非絕對切點，仍應依個別病人臨床反應調整。' },
+  { min:5,  max:10,       cls:'zone-beta',  name:'Beta-1 受體（強心）',     effect:'心跳↑、心收縮↑、CO↑、腎血流↑', warn:null },
+  { min:10, max:Infinity, cls:'zone-alpha', name:'Alpha 受體（升壓）',      effect:'血管收縮、SVR↑、血壓↑',          warn:'高劑量升壓效果強，注意心律不整及末梢缺血風險' }
+];
+
+var REF = [
+  { label:'Dopa（利尿）',   lo:1,  hi:5  },
+  { label:'Beta-1（強心）', lo:5,  hi:10 },
+  { label:'Alpha（升壓）',  lo:10, hi:20 }
+];
+
+function mcgToMl(dose, wt){ return (dose * wt * 60) / (concMgPerMl * 1000); }
+function mlToMcg(rate, wt){ return (rate * concMgPerMl * 1000) / (wt * 60); }
+
+function updateConcDisplay(){
+  document.getElementById('conc-display').textContent =
+    '自訂 · ' + concMgPerMl.toFixed(3) + ' mg/mL';
+}
+
+function selectConc(btn){
+  document.querySelectorAll('.conc-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var cr = document.getElementById('custom-row');
+  if(btn.dataset.mg === 'custom'){
+    cr.classList.add('show');
+    var cmg = parseFloat(document.getElementById('c-mg').value);
+    var cml = parseFloat(document.getElementById('c-ml').value);
+    if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
+  } else {
+    cr.classList.remove('show');
+    concMgPerMl = parseFloat(btn.dataset.mg) / parseFloat(btn.dataset.ml);
+    document.getElementById('conc-display').textContent =
+      btn.dataset.mg + ' mg / ' + btn.dataset.ml + ' mL \u00b7 ' + concMgPerMl.toFixed(3) + ' mg/mL';
+    calc();
+  }
+}
+
+document.getElementById('c-mg').addEventListener('input', function(){
+  var cmg = parseFloat(this.value);
+  var cml = parseFloat(document.getElementById('c-ml').value);
+  if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
+});
+document.getElementById('c-ml').addEventListener('input', function(){
+  var cml = parseFloat(this.value);
+  var cmg = parseFloat(document.getElementById('c-mg').value);
+  if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
+});
+
+function setMode(m){
+  mode = m;
+  document.getElementById('btn-rate').classList.toggle('active', m==='rate');
+  document.getElementById('btn-dose').classList.toggle('active', m==='dose');
+  if(m==='rate'){
+    document.getElementById('lbl-a').textContent  = '輸注速率';
+    document.getElementById('unit-a').textContent = 'mL / hr';
+    document.getElementById('val-a').placeholder  = '10.0';
+    document.getElementById('val-a').step = '0.1';
+  } else {
+    document.getElementById('lbl-a').textContent  = '目標劑量';
+    document.getElementById('unit-a').textContent = 'mcg / kg / min';
+    document.getElementById('val-a').placeholder  = '5.0';
+    document.getElementById('val-a').step = '0.1';
+  }
+  document.getElementById('val-a').value = '';
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('empty-hint').style.display  = 'block';
+}
+
+function calc(){
+  var a  = parseFloat(document.getElementById('val-a').value);
+  var wt = parseFloat(document.getElementById('wt').value);
+  var ra = document.getElementById('result-area');
+  var eh = document.getElementById('empty-hint');
+
+  if(!a || !wt || a <= 0 || wt <= 0 || concMgPerMl <= 0){
+    ra.style.display = 'none'; eh.style.display = 'block'; return;
+  }
+  ra.style.display = 'block'; eh.style.display = 'none';
+
+  var dose, displayVal, displayUnit;
+  if(mode === 'rate'){
+    dose = mlToMcg(a, wt);
+    displayVal  = dose.toFixed(2);
+    displayUnit = 'mcg / kg / min';
+  } else {
+    dose = a;
+    displayVal  = mcgToMl(a, wt).toFixed(1);
+    displayUnit = 'mL / hr';
+  }
+
+  document.getElementById('res-val').textContent  = displayVal;
+  document.getElementById('res-unit').textContent = displayUnit;
+
+  var zone = ZONES.find(function(z){ return dose >= z.min && dose < z.max; }) || ZONES[2];
+  var pill = document.getElementById('zone-pill');
+  pill.className = 'zone-pill ' + zone.cls;
+  document.getElementById('zone-name').textContent   = zone.name;
+  document.getElementById('zone-effect').textContent = zone.effect;
+
+  var wb = document.getElementById('warn-box');
+  if(zone.warn){ wb.style.display = 'block'; document.getElementById('warn-text').textContent = zone.warn; }
+  else { wb.style.display = 'none'; }
+
+  var tbody = document.getElementById('ref-rows');
+  tbody.innerHTML = '';
+  REF.forEach(function(t){
+    var lo = mcgToMl(t.lo, wt), hi = mcgToMl(t.hi, wt);
+    var cur = dose >= t.lo && dose < t.hi;
+    var tr = document.createElement('tr');
+    if(cur) tr.className = 'current';
+    tr.innerHTML =
+      '<td>' + (cur ? '<span class="cdot"></span>' : '') + t.label + '</td>' +
+      '<td>' + t.lo + '\u2013' + t.hi + '</td>' +
+      '<td>' + lo.toFixed(1) + ' \u2013 ' + hi.toFixed(1) + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>
