@@ -55,7 +55,7 @@ mL/hr = mcg/kg/min × kg × 60 ÷ (mg/mL × 1000)
 
 ```bash
 # 1. Create a repo (or use an existing one)
-# 2. Put index.html in the repo root
+# 2. Put index.html and js/ in the repo root
 # 3. Go to Settings → Pages → Source: Deploy from branch
 #    Branch: main  /  Folder: / (root)
 # 4. Save → live in about 1 minute
@@ -69,7 +69,8 @@ URL format after deployment: `https://<your-username>.github.io/<repo-name>/`
 
 | Item | Description |
 |------|------|
-| Architecture | Plain HTML / CSS / vanilla JS, single file |
+| Architecture | Plain HTML / CSS / vanilla JS; calculation core in `js/calc.js` (pure functions) |
+| Tests | `node --test` (Node ≥ 18, zero dependencies) |
 | External dependencies | Google Fonts (DM Mono, Noto Sans TC) only; no JS framework |
 | Backend | None |
 | Dark mode | Supported (`prefers-color-scheme: dark`) |
