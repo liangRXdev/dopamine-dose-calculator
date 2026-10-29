@@ -426,28 +426,22 @@
   </footer>
 </div>
 
+<script src="js/calc.js"></script>
 <script>
 var concMgPerMl = 3;
 var mode = 'rate';
 
-var ZONES = [
-  { min:0,  max:5,        cls:'zone-dopa',  name:'Dopamine 受體（利尿）',   effect:'腎血流↑、尿量↑',                warn:'低劑量 Dopamine 不建議單獨用於腎臟保護（缺乏充分臨床證據）。\n注意：部分文獻將 Dopa 受體切點設為 <2 mcg/kg/min，各來源定義不一；劑量區間為參考值，非絕對切點，仍應依個別病人臨床反應調整。' },
-  { min:5,  max:10,       cls:'zone-beta',  name:'Beta-1 受體（強心）',     effect:'心跳↑、心收縮↑、CO↑、腎血流↑', warn:null },
-  { min:10, max:Infinity, cls:'zone-alpha', name:'Alpha 受體（升壓）',      effect:'血管收縮、SVR↑、血壓↑',          warn:'高劑量升壓效果強，注意心律不整及末梢缺血風險' }
-];
-
-var REF = [
-  { label:'Dopa（利尿）',   lo:1,  hi:5  },
-  { label:'Beta-1（強心）', lo:5,  hi:10 },
-  { label:'Alpha（升壓）',  lo:10, hi:20 }
-];
-
-function mcgToMl(dose, wt){ return (dose * wt * 60) / (concMgPerMl * 1000); }
-function mlToMcg(rate, wt){ return (rate * concMgPerMl * 1000) / (wt * 60); }
-
 function updateConcDisplay(){
-  document.getElementById('conc-display').textContent =
-    '自訂 · ' + concMgPerMl.toFixed(3) + ' mg/mL';
+  document.getElementById('conc-display').textContent = concMgPerMl > 0
+    ? '自訂 · ' + concMgPerMl.toFixed(3) + ' mg/mL'
+    : '自訂 · 請輸入藥量與溶液量';
+}
+
+// 自訂欄位未填完或非正數時濃度設為 NaN，calc() 會撤回結果，避免沿用前一個濃度
+function onCustomInput(){
+  concMgPerMl = DopamineCalc.concFromMgMl(document.getElementById('c-mg').value, document.getElementById('c-ml').value);
+  updateConcDisplay();
+  calc();
 }
 
 function selectConc(btn){
@@ -456,28 +450,18 @@ function selectConc(btn){
   var cr = document.getElementById('custom-row');
   if(btn.dataset.mg === 'custom'){
     cr.classList.add('show');
-    var cmg = parseFloat(document.getElementById('c-mg').value);
-    var cml = parseFloat(document.getElementById('c-ml').value);
-    if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
+    onCustomInput();
   } else {
     cr.classList.remove('show');
-    concMgPerMl = parseFloat(btn.dataset.mg) / parseFloat(btn.dataset.ml);
+    concMgPerMl = DopamineCalc.concFromMgMl(btn.dataset.mg, btn.dataset.ml);
     document.getElementById('conc-display').textContent =
       btn.dataset.mg + ' mg / ' + btn.dataset.ml + ' mL \u00b7 ' + concMgPerMl.toFixed(3) + ' mg/mL';
     calc();
   }
 }
 
-document.getElementById('c-mg').addEventListener('input', function(){
-  var cmg = parseFloat(this.value);
-  var cml = parseFloat(document.getElementById('c-ml').value);
-  if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
-});
-document.getElementById('c-ml').addEventListener('input', function(){
-  var cml = parseFloat(this.value);
-  var cmg = parseFloat(document.getElementById('c-mg').value);
-  if(cmg > 0 && cml > 0){ concMgPerMl = cmg / cml; updateConcDisplay(); calc(); }
-});
+document.getElementById('c-mg').addEventListener('input', onCustomInput);
+document.getElementById('c-ml').addEventListener('input', onCustomInput);
 
 function setMode(m){
   mode = m;
@@ -505,46 +489,33 @@ function calc(){
   var ra = document.getElementById('result-area');
   var eh = document.getElementById('empty-hint');
 
-  if(!a || !wt || a <= 0 || wt <= 0 || concMgPerMl <= 0){
+  var r = DopamineCalc.compute(mode, a, wt, concMgPerMl);
+  if(!r){
     ra.style.display = 'none'; eh.style.display = 'block'; return;
   }
   ra.style.display = 'block'; eh.style.display = 'none';
 
-  var dose, displayVal, displayUnit;
-  if(mode === 'rate'){
-    dose = mlToMcg(a, wt);
-    displayVal  = dose.toFixed(2);
-    displayUnit = 'mcg / kg / min';
-  } else {
-    dose = a;
-    displayVal  = mcgToMl(a, wt).toFixed(1);
-    displayUnit = 'mL / hr';
-  }
+  document.getElementById('res-val').textContent  = r.displayVal;
+  document.getElementById('res-unit').textContent = r.displayUnit;
 
-  document.getElementById('res-val').textContent  = displayVal;
-  document.getElementById('res-unit').textContent = displayUnit;
-
-  var zone = ZONES.find(function(z){ return dose >= z.min && dose < z.max; }) || ZONES[2];
   var pill = document.getElementById('zone-pill');
-  pill.className = 'zone-pill ' + zone.cls;
-  document.getElementById('zone-name').textContent   = zone.name;
-  document.getElementById('zone-effect').textContent = zone.effect;
+  pill.className = 'zone-pill ' + r.zone.cls;
+  document.getElementById('zone-name').textContent   = r.zone.name;
+  document.getElementById('zone-effect').textContent = r.zone.effect;
 
   var wb = document.getElementById('warn-box');
-  if(zone.warn){ wb.style.display = 'block'; document.getElementById('warn-text').textContent = zone.warn; }
+  if(r.zone.warn){ wb.style.display = 'block'; document.getElementById('warn-text').textContent = r.zone.warn; }
   else { wb.style.display = 'none'; }
 
   var tbody = document.getElementById('ref-rows');
   tbody.innerHTML = '';
-  REF.forEach(function(t){
-    var lo = mcgToMl(t.lo, wt), hi = mcgToMl(t.hi, wt);
-    var cur = dose >= t.lo && dose < t.hi;
+  r.ref.forEach(function(t){
     var tr = document.createElement('tr');
-    if(cur) tr.className = 'current';
+    if(t.current) tr.className = 'current';
     tr.innerHTML =
-      '<td>' + (cur ? '<span class="cdot"></span>' : '') + t.label + '</td>' +
-      '<td>' + t.lo + '\u2013' + t.hi + '</td>' +
-      '<td>' + lo.toFixed(1) + ' \u2013 ' + hi.toFixed(1) + '</td>';
+      '<td>' + (t.current ? '<span class="cdot"></span>' : '') + t.label + '</td>' +
+      '<td>' + t.doseText + '</td>' +
+      '<td>' + t.rateText + '</td>';
     tbody.appendChild(tr);
   });
 }

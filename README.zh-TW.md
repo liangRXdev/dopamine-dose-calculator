@@ -55,7 +55,7 @@ mL/hr = mcg/kg/min × kg × 60 ÷ (mg/mL × 1000)
 
 ```bash
 # 1. 建立 repo（或使用現有 repo）
-# 2. 將 index.html 放置於 repo 根目錄
+# 2. 將 index.html 與 js/ 放置於 repo 根目錄
 # 3. 前往 Settings → Pages → Source: Deploy from branch
 #    Branch: main  /  Folder: / (root)
 # 4. Save → 約 1 分鐘後生效
@@ -69,7 +69,8 @@ mL/hr = mcg/kg/min × kg × 60 ÷ (mg/mL × 1000)
 
 | 項目 | 說明 |
 |------|------|
-| 架構 | 純 HTML / CSS / Vanilla JS，單一檔案 |
+| 架構 | 純 HTML / CSS / Vanilla JS；計算核心為 `js/calc.js`（純函式） |
+| 測試 | `node --test`（Node ≥ 18，零相依） |
 | 外部依賴 | Google Fonts（DM Mono、Noto Sans TC），僅字型，無 JS 框架 |
 | 後端需求 | 無 |
 | 深色模式 | 支援（`prefers-color-scheme: dark`） |
