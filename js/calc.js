@@ -35,6 +35,13 @@
     return (mg > 0 && ml > 0) ? mg / ml : NaN;
   }
 
+  // 固定小數位，但至少保留 2 位有效數字：避免新生兒等小數值被捨成 0.0
+  // （decimals=1 時 <1 改用 2 位有效數字；decimals=2 時 <0.1 亦同）
+  function formatNum(v, decimals){
+    if(v > 0 && v < Math.pow(10, 1 - decimals)) return v.toPrecision(2);
+    return v.toFixed(decimals);
+  }
+
   function findZone(dose){
     for (var i = 0; i < ZONES.length; i++) {
       if (dose >= ZONES[i].min && dose < ZONES[i].max) return ZONES[i];
@@ -60,10 +67,10 @@
 
     var displayVal, displayUnit;
     if(mode === 'rate'){
-      displayVal  = dose.toFixed(2);
+      displayVal  = formatNum(dose, 2);
       displayUnit = 'mcg / kg / min';
     } else {
-      displayVal  = rate.toFixed(1);
+      displayVal  = formatNum(rate, 1);
       displayUnit = 'mL / hr';
     }
 
@@ -72,7 +79,7 @@
       return {
         label: t.label,
         doseText: t.lo + '–' + t.hi,
-        rateText: lo.toFixed(1) + ' – ' + hi.toFixed(1),
+        rateText: formatNum(lo, 1) + ' – ' + formatNum(hi, 1),
         current: dose >= t.lo && dose < t.hi
       };
     });
@@ -83,6 +90,6 @@
   return {
     ZONES: ZONES, REF: REF,
     mcgToMl: mcgToMl, mlToMcg: mlToMcg,
-    concFromMgMl: concFromMgMl, findZone: findZone, compute: compute
+    concFromMgMl: concFromMgMl, formatNum: formatNum, findZone: findZone, compute: compute
   };
 });

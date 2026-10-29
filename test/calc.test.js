@@ -57,3 +57,14 @@ test('B2 compute：濃度 NaN（自訂濃度未填完）回傳 null', () => {
   assert.equal(C.compute('rate', 10, 60, NaN), null);
   assert.equal(C.compute('dose', 5, 60, NaN), null);
 });
+
+test('B1 formatNum：≥ 門檻維持原小數位，正的小數值保留 2 位有效數字', () => {
+  assert.equal(C.formatNum(6, 1), '6.0');
+  assert.equal(C.formatNum(1, 1), '1.0');
+  assert.equal(C.formatNum(26.25, 1), '26.3');
+  assert.equal(C.formatNum(0.016, 1), '0.016');
+  assert.equal(C.formatNum(0.5, 1), '0.50');
+  assert.equal(C.formatNum(8.3333, 2), '8.33');
+  assert.equal(C.formatNum(0.1, 2), '0.10');
+  assert.equal(C.formatNum(0.00762, 2), '0.0076');
+});
