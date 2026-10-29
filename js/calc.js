@@ -48,7 +48,7 @@
    * 輸入無效時回傳 null（UI 顯示「輸入數值後自動顯示結果」）
    */
   function compute(mode, a, wt, conc){
-    if(!a || !wt || a <= 0 || wt <= 0 || conc <= 0) return null;
+    if(!a || !wt || a <= 0 || wt <= 0 || !(conc > 0)) return null;
 
     var dose, displayVal, displayUnit;
     if(mode === 'rate'){

@@ -432,13 +432,16 @@ var concMgPerMl = 3;
 var mode = 'rate';
 
 function updateConcDisplay(){
-  document.getElementById('conc-display').textContent =
-    '自訂 · ' + concMgPerMl.toFixed(3) + ' mg/mL';
+  document.getElementById('conc-display').textContent = concMgPerMl > 0
+    ? '自訂 · ' + concMgPerMl.toFixed(3) + ' mg/mL'
+    : '自訂 · 請輸入藥量與溶液量';
 }
 
+// 自訂欄位未填完或非正數時濃度設為 NaN，calc() 會撤回結果，避免沿用前一個濃度
 function onCustomInput(){
-  var c = DopamineCalc.concFromMgMl(document.getElementById('c-mg').value, document.getElementById('c-ml').value);
-  if(c > 0){ concMgPerMl = c; updateConcDisplay(); calc(); }
+  concMgPerMl = DopamineCalc.concFromMgMl(document.getElementById('c-mg').value, document.getElementById('c-ml').value);
+  updateConcDisplay();
+  calc();
 }
 
 function selectConc(btn){

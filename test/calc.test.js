@@ -52,3 +52,8 @@ test('compute：無效輸入回傳 null', () => {
   assert.equal(C.compute('dose', 5, 60, 0), null);
   assert.equal(C.compute('dose', 5, 60, -1), null);
 });
+
+test('B2 compute：濃度 NaN（自訂濃度未填完）回傳 null', () => {
+  assert.equal(C.compute('rate', 10, 60, NaN), null);
+  assert.equal(C.compute('dose', 5, 60, NaN), null);
+});
