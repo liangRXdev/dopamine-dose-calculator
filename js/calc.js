@@ -50,19 +50,25 @@
   function compute(mode, a, wt, conc){
     if(!a || !wt || a <= 0 || wt <= 0 || !(conc > 0)) return null;
 
-    var dose, displayVal, displayUnit;
+    var dose = mode === 'rate' ? mlToMcg(a, wt, conc) : a;
+    var rate = mode === 'rate' ? a : mcgToMl(a, wt, conc);
+    var refMl = REF.map(function(t){ return [mcgToMl(t.lo, wt, conc), mcgToMl(t.hi, wt, conc)]; });
+    // 合法的 <input type=number> 字串（如 1e308）仍可能溢位；任何非有限值都不顯示
+    var all = [dose, rate];
+    refMl.forEach(function(p){ all.push(p[0], p[1]); });
+    if(!all.every(isFinite)) return null;
+
+    var displayVal, displayUnit;
     if(mode === 'rate'){
-      dose = mlToMcg(a, wt, conc);
       displayVal  = dose.toFixed(2);
       displayUnit = 'mcg / kg / min';
     } else {
-      dose = a;
-      displayVal  = mcgToMl(a, wt, conc).toFixed(1);
+      displayVal  = rate.toFixed(1);
       displayUnit = 'mL / hr';
     }
 
-    var ref = REF.map(function(t){
-      var lo = mcgToMl(t.lo, wt, conc), hi = mcgToMl(t.hi, wt, conc);
+    var ref = REF.map(function(t, i){
+      var lo = refMl[i][0], hi = refMl[i][1];
       return {
         label: t.label,
         doseText: t.lo + '–' + t.hi,

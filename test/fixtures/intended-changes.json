@@ -2,5 +2,7 @@
  "state|switch-to-custom-empty": "B2：切到自訂且欄位空白，原沿用 3 mg/mL 顯示 8.33 → 改為隱藏結果",
  "state|custom-mg-only": "B2：自訂僅填藥量，原沿用 3 mg/mL → 改為隱藏結果",
  "state|custom-zero-mg": "B2：自訂 0 mg / 100 mL，原沿用 3 mg/mL → 改為隱藏結果",
- "state|custom-cleared": "B2：清空自訂體積，原停留在 4 mg/mL → 改為隱藏結果"
+ "state|custom-cleared": "B2：清空自訂體積，原停留在 4 mg/mL → 改為隱藏結果",
+ "extreme|rate-overflow": "B3：1e308 mL/hr、0.0001 kg，原顯示 Infinity mcg/kg/min → 改為隱藏結果",
+ "extreme|dose-overflow": "B3：1e308 mcg/kg/min、1e10 kg，原顯示 Infinity mL/hr → 改為隱藏結果"
 }
